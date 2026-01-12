@@ -361,3 +361,38 @@ body {
 figure.image figcaption {
   text-align: center;
 }
+
+/* 炫彩文字效果 */
+.highlight-text {
+  background: linear-gradient(90deg,
+      #ff0000 0%,
+      #ff7f00 14%,
+      #ffff00 28%,
+      #00ff00 42%,
+      #0000ff 56%,
+      #4b0082 70%,
+      #9400d3 84%,
+      #ff0000 100%);
+  /* 设置渐变背景大小，用于动画流动效果（可选） */
+  background-size: 200% auto;
+
+  /* 核心属性：将背景裁剪为文字形状 */
+  -webkit-background-clip: text;
+  background-clip: text;
+
+  /* 文字颜色设为透明，透出背景 */
+  color: transparent;
+
+  /* 保持字体粗细，确保效果明显 */
+  font-weight: 800;
+
+  /* 可选：添加流动动画 */
+  animation: shine 3s linear infinite;
+}
+
+/* 动画定义 */
+@keyframes shine {
+  to {
+    background-position: 200% center;
+  }
+}
