@@ -1,0 +1,248 @@
+\title{ASTRA: Automated Synthesis of agentic Trajectories and Reinforcement Arenas}
+
+
+
+\begin{document}
+\makeatletter
+\renewcommand\@fnsymbol[1]{\ifcase#1\or 1\else\@arabic{#1}\fi}
+\makeatother
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%% author
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \author{
+%   author,\quad author,\quad  author,\quad author,\\
+%   author,\quad author,\quad author,\quad author
+% }
+\author{}
+\date{}
+\maketitle
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%% abstract
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \begin{abstract}
+% here to add results and abstract.
+% Figures and Tables Present the Results, Along with a Brief Summary Describing the Current State of Related Work and the Core Contributions.
+% \href{https://www.google.com/}{link demo}\footnote{\url{https://www.google.com/}}.
+% \end{abstract}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%% section
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Overview}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=1.1\linewidth]{model_performance.pdf}
+    \caption{Model Performance On BFCL-V3 Multi-Turn Subset}
+    \label{fig:model_performance}
+\end{figure}
+
+Recent progress in tool-augmented large language models has shown promise, yet existing methods struggle in fully agentic, multi-turn settings: tool interactions are often simulated rather than executed, training data relies on human annotation, and reinforcement learning lacks verifiable, rule-based verification environments, leading to noisy rewards and unstable optimization.
+
+To address these limitations, we propose an \textbf{end-to-end, fully automated pipeline} for tool-agent training based on executable trajectories. We construct a \textbf{large-scale, high-quality data pipeline} combining massive real MCP interactions with selective, session-consistent simulation for supervised fine-tuning, and introduce a \textbf{fully verifiable environment synthesis pipeline} where each step is grounded in executable code and validated by sandboxed execution, enabling scalable rule-based reinforcement learning.
+
+Our contributions are as follows:
+\begin{itemize}[leftmargin=1.2em]
+\item \textbf{Fully open and automated agentic data synthesis pipeline.} All code and model weights are fully open-sourced. Moreover, the environment synthesis framework can automatically construct executable environments given only domain specifications and relevant knowledge, without human-in-the-loop intervention.
+\item \textbf{State-of-the-art performance at comparable model scales.} Our approach enables models at comparable parameter scales to achieve state-of-the-art performance, approaching that of leading closed-source models.
+\item \textbf{Multi-domain, code-verifiable environments for RL.} Our MCP interactions and synthesized environments span multiple real-world domains, with fully executable and rule-based verification code, making them directly suitable for rule-based, multi-turn reinforcement learning.
+\end{itemize}
+
+Using this \textbf{end-to-end automated framework}, a \textbf{32B-scale open model} trained with SFT followed by RL achieves performance \textbf{competitive with and approaching closed-source systems} on complex multi-turn tool-use tasks, demonstrating that strong agentic capabilities can be learned without human-in-the-loop supervision.
+
+
+
+
+ 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%content (@Haotian)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Multi-turn Tool-Integrated Trajectory Synthesis}
+\label{sec:trajectory_synthesis}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=1.0\linewidth]{sft-pipeline.pdf}
+    \caption{Overview of Trajectory Synthesis Pipeline. }
+    \label{fig:sft-pipeline}
+\end{figure}
+
+\paragraph{Data Pipeline for Tool-grounded SFT.}
+We construct an SFT-ready dataset via an end-to-end pipeline that enforces \emph{realism} and \emph{executability} throughout:
+\begin{itemize}[leftmargin=1.2em]
+  \item \textbf{Tool pool construction.} We aggregate tools from open MCP registries, internal production services, and public tool datasets, then normalize all interfaces into an OpenAI-style tool-calling schema and group them by MCP server. We filter out servers that cannot support non-trivial multi-turn interactions, yielding a clean tool pool (\textbf{1,585} servers; \textbf{19,036} tools; \textbf{41} domains) for downstream synthesis.
+  
+  \item \textbf{Tool-chains and task synthesis.} For each server, we derive \emph{executable tool-chains} by analyzing schema-level dependencies, verifying parameter satisfiability, and enforcing acyclic workflows. We then synthesize multi-step user tasks using (i) chain-conditioned generation to maximize executability and (ii) server-level generation to improve coverage and diversity, followed by lightweight augmentation and filtering for clarity, realism, and tool-use necessity.
+  
+  \item \textbf{Multi-turn rollout for trajectories.} We collect trajectories by rolling out multi-turn interactions between a tool-augmented agent and its environment, recording observations, tool calls, and feedback. Deployed MCP services are executed directly, while document-only servers are handled by a \emph{session-consistent tool emulator} that maintains cross-turn state and injects controlled failures, producing coherent training sequences for SFT and downstream reinforcement learning.
+  
+  \item \textbf{Automated reward modeling and filtering.} All trajectories are scored by a fully automated, rule-based LLM reward pipeline without human annotation. The reward aggregates seven dimensions spanning understanding, planning, tool use, execution, and final answer quality, and is used to reliably filter high-quality SFT trajectories at scale.
+\end{itemize}
+
+
+
+
+\section{Fully Verifiable and Automated Environment Synthesis}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=1.0\linewidth]{env.pdf}
+    \caption{Overview of Environment Synthesis Pipeline.}
+    \label{fig:Env}
+\end{figure}
+
+\paragraph{Environment Synthesis for Fully Automated, Verifiable, and Scalable RLVR dataset}
+Our objective is to enable RLVR at scale with \textbf{end-to-end automation}, \textbf{rule-checkable process signals}, and \textbf{no human labels}. We therefore synthesize \textbf{self-contained executable environments} where each intermediate step  can be \emph{checked by code sandbox}, which makes the pipeline naturally scalable. These environments are then used to roll out multi-turn interactions and to derive process-level feedback for subsequent training.
+
+\begin{itemize}[leftmargin=1.2em]
+  \item \textbf{Decomposed trajectories as environment blueprints.} Each instance is represented as a main QA with explicit sub-QA steps organized by a dependency graph (chain/DAG), providing an inspectable structure for reward attribution and step-wise validation.
+  \item \textbf{Execution-oriented validation.} We discard decompositions solvable by linguistic reasoning alone and score the remaining candidates along \textbf{dependency consistency}, \textbf{atomicity}, \textbf{sequential rationality}, and \textbf{task completeness}. Only high-quality trajectories are retained, ensuring they are well-structured and suitable for tool grounding.
+  \item \textbf{Tool grounding with sandbox checks.} For each retained trajectory $\tau=\{(q_i,a_i,d_i)\}_{i=1}^m$, we synthesize a tool specification, invocation, and \textbf{Python implementation} per sub-step, then execute the code in a sandbox. A sub-environment is accepted only if execution reproduces the target answer; otherwise synthesis is retried, and validated sub-environments are composed into a complete environment for the original task.
+  \item \textbf{Compactness via intra-instance merging.} To reduce redundancy and control action-space growth, we merge functionally equivalent sub-environments that differ only in parameters. Homogeneous groups are detected via an LLM-based classifier; a single implementation is retained and incrementally extended to cover all cases, with sandbox re-execution after each update to preserve correctness.
+\end{itemize}
+
+\section{Training Tool Agents}
+
+We train tool agents in \textbf{two stages}: \textbf{Supervised Fine-Tuning (SFT)} followed by \textbf{Reinforcement Learning (RL)}.
+SFT provides a strong behavioral prior by training on curated multi-turn tool trajectories, enabling basic capabilities such as tool invocation, workflow following, and long-context reasoning.
+Building on this initialization, RL further improves \textbf{long-horizon decision making} and \textbf{tool-use efficiency} in fully executable environments.
+
+\subsection{Online Multi-Turn Reinforcement Learning}
+
+We adopt an \textbf{online, multi-turn agentic RL} paradigm. Each training instance corresponds to an independent simulated environment with no shared state.
+During rollout, the agent repeatedly generates tool calls, executes them in a sandboxed runtime, and conditions subsequent decisions on the full interaction history.
+A trajectory terminates when all sub-tasks are solved, a maximum interaction length is reached, or the agent stops issuing tool calls.
+
+\subsection{Trajectory-Level Reward Design}
+
+Reinforcement learning is driven by a \textbf{trajectory-level reward} that jointly captures task completion and interaction efficiency.
+Each instance is formalized as a job consisting of $n$ sub-tasks:
+\begin{equation}
+\text{job} = \{(q_1, a_1), (q_2, a_2), \ldots, (q_n, a_n)\}.
+\end{equation}
+
+Suppose the agent successfully solves $\hat{n}$ sub-tasks using $c$ tool calls.
+We define
+\begin{equation}
+r = \frac{\hat{n}}{n}, \qquad
+p = \frac{\hat{n}}{c},
+\end{equation}
+where $r$ measures \textbf{sub-task recall} and $p$ measures \textbf{tool-use precision}.
+The final reward is computed as the harmonic mean:
+\begin{equation}
+\text{reward} = \frac{2pr}{p + r}.
+\end{equation}
+
+This reward formulation explicitly encourages solving as many required sub-tasks as possible while minimizing redundant tool invocations, providing a structured learning signal over entire trajectories.
+
+\subsection{Stable Online Optimization with Adaptive Batch Filling}
+
+We optimize the policy using a GRPO-style objective.
+The original GRPO objective is defined as:
+\begin{equation}
+\begin{aligned}
+\mathcal{J}_{\mathrm{GRPO}}(\theta)
+&=
+\mathbb{E}\!\left[
+q \sim P(Q),\ \{o_i\}_{i=1}^{G} \sim \pi_{\theta_{\mathrm{old}}}(\cdot \mid q)
+\right]
+\\
+&\quad
+\frac{1}{G}
+\sum_{i=1}^{G}
+\frac{1}{|o_i|}
+\sum_{t=1}^{|o_i|}
+\min \Bigl(
+r_{i,t}(\theta)\,\hat{A}_{i,t},\,
+\operatorname{clip}(r_{i,t}(\theta), 1-\epsilon, 1+\epsilon)\,\hat{A}_{i,t}
+\Bigr),
+\end{aligned}
+\end{equation}
+where $r_{i,t}(\theta)$ denotes the policy ratio.
+
+In practice, we remove KL regularization and entropy bonuses. We adopt \textbf{Adaptive Batch Filling}, which buffers valid trajectories and continues rollout generation until a full batch of $n$ effective samples is collected. We further adopt a \textbf{token-level policy gradient loss}. The final reinforcement learning objective is:
+
+
+
+
+\begin{equation}
+\begin{aligned}
+\mathcal{J}_{\mathrm{GRPO}}'(\theta)
+&=
+\mathbb{E}_{(q,a)\sim\mathcal{D},\ \{o_i\}_{i=1}^{G}\sim\pi_{\theta_{\mathrm{old}}}(\cdot\mid q)}
+\!\left[
+\,\cdot\ \Bigm|\ 
+\textcolor{red}{\operatorname{Std}\!\big(R(q,\{o_i\})\big) > \delta}
+\right]
+\\[6pt]
+&\quad
+\left[
+\frac{1}{\textcolor{red}{\sum_{i=1}^{G} |o_i|}}
+\sum_{i=1}^{G}
+\sum_{t=1}^{|o_i|}
+\min \left(
+\frac{\pi_\theta(o_{i,t}\mid q,o_{i,<t})}
+     {\pi_{\theta_{\mathrm{old}}}(o_{i,t}\mid q,o_{i,<t})}
+\hat{A}_{i,t},
+\;
+\operatorname{clip}\!\left(
+\frac{\pi_\theta(o_{i,t}\mid q,o_{i,<t})}
+     {\pi_{\theta_{\mathrm{old}}}(o_{i,t}\mid q,o_{i,<t})},
+1-\epsilon,
+1+\epsilon
+\right)
+\hat{A}_{i,t}
+\right)
+\right].
+\end{aligned}
+\end{equation}
+
+Together, trajectory-level rewards, adaptive batch filling, and token-level optimization enable \textbf{stable online RL} for learning \textbf{multi-turn, tool-augmented policies} in fully executable and verifiable environments.
+
+
+
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%% section
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{BibTex}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%% reference
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \newpage
+% % \bibliographystyle{plainnat}
+% \bibliographystyle{unsrt}
+% \bibliography{reference}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%% appendix
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \appendix
+
+% \section{Appendix / supplemental material}
+
+
+% Optionally include supplemental material (complete proofs, additional experiments and plots) in appendix.
+% All such materials \textbf{SHOULD be included in the main submission.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+\end{document}

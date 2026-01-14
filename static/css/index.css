@@ -9,7 +9,7 @@ body {
 }
 
 .link-block {
-  margin: 0.5rem
+  margin: 0;
 }
 
 /* .link-block a {
@@ -18,8 +18,55 @@ body {
 }  */
 
 .publication-links {
-  margin-top: 0.6rem;
-  margin-bottom: 0.1rem
+  margin-top: 0.9rem;
+  margin-bottom: 0.2rem;
+}
+
+/* Pretty publication links row */
+.publication-links--pretty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  max-width: 980px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.publication-links--pretty .button {
+  height: 42px;
+  padding-left: 0.95rem;
+  padding-right: 0.95rem;
+  border-radius: 999px !important;
+  background: rgba(20, 22, 28, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+
+.publication-links--pretty .button .icon {
+  margin-right: 0.55rem;
+}
+
+.publication-links--pretty .button:hover {
+  transform: translateY(-2px);
+  background: rgba(30, 34, 44, 0.92);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.22);
+}
+
+.publication-links--pretty .button:focus-visible {
+  outline: 3px solid rgba(50, 160, 255, 0.55);
+  outline-offset: 2px;
+}
+
+.publication-links--pretty .button.is-disabled,
+.publication-links--pretty .button[aria-disabled="true"] {
+  opacity: 0.55;
+  filter: grayscale(0.2);
+  pointer-events: none;
+  transform: none !important;
+  box-shadow: none;
 }
 
 .dnerf {
@@ -37,8 +84,6 @@ body {
 }
 
 
-.publication-title {}
-
 .publication-banner {
   max-height: parent;
 
@@ -52,10 +97,8 @@ body {
   object-fit: fit;
 }
 
-.publication-header .hero-body {}
-
 .publication-title {
-  font-family: 'Google Sans', sans-serif;
+  font-family: 'Montserrat', sans-serif;
 }
 
 .publication-authors {
@@ -76,8 +119,6 @@ body {
   font-weight: bolder;
 }
 
-.publication-authors {}
-
 .publication-authors a {
   color: hsl(204, 86%, 53%) !important;
 }
@@ -88,12 +129,6 @@ body {
 
 .author-block {
   margin: 0 1rem;
-}
-
-.publication-banner img {}
-
-.publication-authors {
-  /*color: #4286f4;*/
 }
 
 .publication-video {
@@ -113,8 +148,6 @@ body {
   width: 100%;
   height: 100%;
 }
-
-.publication-body img {}
 
 .results-carousel {
   overflow: hidden;
@@ -143,8 +176,6 @@ body {
   width: 100%;
   border-radius: 5px;
 }
-
-.interpolation-video-column {}
 
 .interpolation-panel .slider {
   margin: 0 !important;
@@ -335,12 +366,13 @@ body {
 
 
 .elegant-title {
-  font-family: 'Playfair Display', serif;
-  font-weight: 700;
-  color: #34495e;
-  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.1);
+  font-family: 'Montserrat', sans-serif !important;
+  font-weight: 800;
+  color: #2c3e50;
+  /* text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.1); */
   position: relative;
   padding-bottom: 0.5rem;
+  letter-spacing: -0.02em;
 }
 
 .elegant-title::after {
@@ -351,6 +383,13 @@ body {
   width: 50px;
   height: 2px;
   background: #e74c3c;
+}
+
+/* Subtitle font style matching elegant-title but without underline if needed, or just same family */
+.subtitle-consistent {
+  font-family: 'Montserrat', sans-serif !important;
+  font-weight: 700;
+  color: #2c3e50;
 }
 
 .author-name {
@@ -390,9 +429,130 @@ figure.image figcaption {
   animation: shine 3s linear infinite;
 }
 
-/* 动画定义 */
-@keyframes shine {
-  to {
-    background-position: 200% center;
+/* 图片放大模态框（更顺滑、支持缩放/拖拽） */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(6px);
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.18s ease, visibility 0.18s ease;
+}
+
+.modal.is-active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.modal-inner {
+  width: min(1200px, 92vw);
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.modal-content {
+  display: block;
+  width: 100%;
+  max-height: 78vh;
+  object-fit: contain;
+  border-radius: 14px;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
+  background: rgba(255, 255, 255, 0.02);
+  transform: translate3d(0, 0, 0) scale(1);
+  transform-origin: center center;
+  will-change: transform;
+  cursor: zoom-in;
+  transition: transform 0.12s ease;
+}
+
+.modal-content.is-zoomed {
+  cursor: grab;
+}
+
+.modal-content.is-dragging {
+  cursor: grabbing;
+}
+
+.modal-caption {
+  width: 100%;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: 'Noto Sans', sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  text-align: center;
+  user-select: none;
+}
+
+.modal-caption .hint {
+  display: block;
+  margin-top: 0.2rem;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.85rem;
+}
+
+.close {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.35);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 28px;
+  line-height: 40px;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+
+.close:hover {
+  transform: scale(1.06);
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* 放大图片的样式 */
+.enlargeable-image {
+  cursor: zoom-in;
+  transition: transform 0.2s;
+}
+
+.enlargeable-image:hover {
+  transform: scale(1.02);
+}
+
+/* Clip path for star shape */
+.star-burst {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #C0C0C0;
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  pointer-events: none;
+  animation: burst 0.8s ease-out forwards;
+}
+
+@keyframes burst {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(var(--tx), var(--ty)) scale(0);
+    opacity: 0;
   }
 }
