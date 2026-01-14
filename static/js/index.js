@@ -88,7 +88,8 @@ $(document).ready(function () {
   });
 
   function createStarBurst(x, y) {
-    const colors = ['#C0C0C0', '#D3D3D3', '#E8E8E8', '#A9A9A9', '#B0C4DE']; // Silver shades
+    // 银色系: 亮银 -> 灰银 -> 淡钢蓝 -> 幽灵白 -> 亮灰
+    const colors = ['#C0C0C0', '#D3D3D3', '#B0C4DE', '#F8F8FF', '#DCDCDC'];
     const particleCount = 20;
 
     for (let i = 0; i < particleCount; i++) {

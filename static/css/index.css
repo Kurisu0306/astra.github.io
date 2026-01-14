@@ -414,6 +414,7 @@ figure.image figcaption {
       #ff0000 100%);
   /* 设置渐变背景大小，用于动画流动效果（可选） */
   background-size: 200% auto;
+  background-position: 0% center;
 
   /* 核心属性：将背景裁剪为文字形状 */
   -webkit-background-clip: text;
@@ -428,6 +429,19 @@ figure.image figcaption {
   /* 可选：添加流动动画 */
   animation: shine 3s linear infinite;
 }
+
+@keyframes shine {
+  to {
+    background-position: 200% center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .highlight-text {
+    animation: none;
+  }
+}
+
 
 /* 图片放大模态框（更顺滑、支持缩放/拖拽） */
 .modal {
